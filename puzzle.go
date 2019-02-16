@@ -21,27 +21,27 @@ var board = [...]string{
 	"C", " ", "K", "L", "R", "U",
 }
 
-//var pieces = [...]uint64{ // original Granskas set
-//	0xE0C0800000000000, // 11100000_11000000_10000000...
-//	0xF060000000000000, // 11110000_00110000_00000000...
-//	0xF080800000000000, // 11110000_10000000_10000000...
-//	0x70E0000000000000, // 01110000_11100000_00000000...
-//	0xF0C0000000000000, // 11110000_11000000_00000000...
-//	0x4070C00000000000, // 01000000_01110000_11000000...
+var pieces = [...]uint64{ // original Granskas set
+	0xE0C0800000000000, // 11100000_11000000_10000000...
+	0xF060000000000000, // 11110000_00110000_00000000...
+	0xF080800000000000, // 11110000_10000000_10000000...
+	0x70E0000000000000, // 01110000_11100000_00000000...
+	0xF0C0000000000000, // 11110000_11000000_00000000...
+	0x4070C00000000000, // 01000000_01110000_11000000...
 }
 
 //var pieces = [...]uint64{
-	0x80F0800000000000, // 10000000_11110000_10000000... 01) cube unfolding
-	0x80F0400000000000, // 10000000_11110000_01000000... 02) cube unfolding
-	0x80F0200000000000, // 10000000_11110000_00100000... 03) cube unfolding
-	0x80F0100000000000, // 10000000_11110000_00010000... 04) cube unfolding
-	0x40F0200000000000, // 01000000_11110000_00100000... 05) cube unfolding
-	0x40F0400000000000, // 01000000_11110000_01000000... 06) cube unfolding
-	0xC070400000000000, // 11000000_01110000_01000000... 07) cube unfolding
-	0xC070200000000000, // 11000000_01110000_00100000... 08) cube unfolding
-	0x80E0300000000000, // 10000000_11100000_00110000... 09) cube unfolding
-	0xC060300000000000, // 11000000_01100000_00110000... 10) cube unfolding
-	0xE038000000000000, // 11100000_00111000_00000000... 11) cube unfolding
+	//0x80F0800000000000, // 10000000_11110000_10000000... 01) cube unfolding
+	//0x80F0400000000000, // 10000000_11110000_01000000... 02) cube unfolding
+	//0x80F0200000000000, // 10000000_11110000_00100000... 03) cube unfolding
+	//0x80F0100000000000, // 10000000_11110000_00010000... 04) cube unfolding
+	//0x40F0200000000000, // 01000000_11110000_00100000... 05) cube unfolding
+	//0x40F0400000000000, // 01000000_11110000_01000000... 06) cube unfolding
+	//0xC070400000000000, // 11000000_01110000_01000000... 07) cube unfolding
+	//0xC070200000000000, // 11000000_01110000_00100000... 08) cube unfolding
+	//0x80E0300000000000, // 10000000_11100000_00110000... 09) cube unfolding
+	//0xC060300000000000, // 11000000_01100000_00110000... 10) cube unfolding
+	//0xE038000000000000, // 11100000_00111000_00000000... 11) cube unfolding
 	//0xFC00000000000000, // 11111100_00000000_00000000... 12)
 	//0x80F8000000000000, // 10000000_11111000_00000000... 13)
 	//0x40F8000000000000, // 01000000_11111000_00000000... 14)
@@ -68,7 +68,7 @@ var board = [...]string{
 	//0x20E0C00000000000, // 00100000_11100000_11000000... 35)
 //}
 
-var pieceSymbols = [...]rune{'-', ':', '+', '=', '*', '@'}
+//var pieceSymbols = [...]rune{'-', ':', '+', '=', '*', '@'}
 
 var piecePositions = make([]map[uint64]struct{}, len(pieces))
 func setPiecePositions() {
@@ -259,13 +259,11 @@ func findSolutions(field uint64, withoutPiece, totalPieces,
 					solutions[withoutPiece][puzzleIndex] =
 						append(solutions[withoutPiece][puzzleIndex], usedPositions)
 				}
-				field ^= pos // remove piece and try it's next position
-				delete(usedPositions, piece)
 			} else { // it was not the last piece
 				findSolutions(field, withoutPiece, totalPieces, pieceIndex + 1, usedPieces, usedPositions)
-				field ^= pos // remove piece and try it's next position
-				delete(usedPositions, piece)
 			}
+			field ^= pos // remove piece and try it's next position
+			delete(usedPositions, piece)
 		}
 	}
 }
