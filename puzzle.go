@@ -1,16 +1,21 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 )
 
+const numberOfPieces = 6
 const boardSize = 6
 const topRow uint64 = 0xFF00000000000000
 const bottomRow = topRow >> (8 * (boardSize - 1))
 const leftColumn uint64 = 0x8080808080808080
 const rightColumn = leftColumn >> (boardSize - 1)
+
+var w *bufio.Writer
 
 var board = [...]string{
 	"K", "L", " ", "U", "V", "A",
@@ -21,52 +26,52 @@ var board = [...]string{
 	"C", " ", "K", "L", "R", "U",
 }
 
-var pieces = [...]uint64{ // original Granskas set
-	0xE0C0800000000000, // 11100000_11000000_10000000...
-	0xF060000000000000, // 11110000_00110000_00000000...
-	0xF080800000000000, // 11110000_10000000_10000000...
-	0x70E0000000000000, // 01110000_11100000_00000000...
-	0xF0C0000000000000, // 11110000_11000000_00000000...
-	0x4070C00000000000, // 01000000_01110000_11000000...
-}
-
-//var pieces = [...]uint64{
-	//0x80F0800000000000, // 10000000_11110000_10000000... 01) cube unfolding
-	//0x80F0400000000000, // 10000000_11110000_01000000... 02) cube unfolding
-	//0x80F0200000000000, // 10000000_11110000_00100000... 03) cube unfolding
-	//0x80F0100000000000, // 10000000_11110000_00010000... 04) cube unfolding
-	//0x40F0200000000000, // 01000000_11110000_00100000... 05) cube unfolding
-	//0x40F0400000000000, // 01000000_11110000_01000000... 06) cube unfolding
-	//0xC070400000000000, // 11000000_01110000_01000000... 07) cube unfolding
-	//0xC070200000000000, // 11000000_01110000_00100000... 08) cube unfolding
-	//0x80E0300000000000, // 10000000_11100000_00110000... 09) cube unfolding
-	//0xC060300000000000, // 11000000_01100000_00110000... 10) cube unfolding
-	//0xE038000000000000, // 11100000_00111000_00000000... 11) cube unfolding
-	//0xFC00000000000000, // 11111100_00000000_00000000... 12)
-	//0x80F8000000000000, // 10000000_11111000_00000000... 13)
-	//0x40F8000000000000, // 01000000_11111000_00000000... 14)
-	//0x20F8000000000000, // 00100000_11111000_00000000... 15)
-	//0xC078000000000000, // 11000000_01111000_00000000... 16)
-	//0xC0F0000000000000, // 11000000_11110000_00000000... 17)
-	//0xA0F0000000000000, // 10100000_11110000_00000000... 18)
-	//0x90F0000000000000, // 10010000_11110000_00000000... 19)
-	//0x60F0000000000000, // 01100000_11110000_00000000... 20)
-	//0x8080F00000000000, // 10000000_10000000_11110000... 21)
-	//0x4040F00000000000, // 01000000_01000000_11110000... 22)
-	//0x40C0700000000000, // 01000000_11000000_01110000... 23)
-	//0xD070000000000000, // 11010000_01110000_00000000... 24)
-	//0xE070000000000000, // 11100000_01110000_00000000... 25)
-	//0xE0E0000000000000, // 11100000_11100000_00000000... 26)
-	//0xC0E0800000000000, // 11000000_11100000_10000000... 27)
-	//0xC040700000000000, // 11000000_01000000_01110000... 28)
-	//0x80C0700000000000, // 10000000_11000000_01110000... 29)
-	//0xC080E00000000000, // 11000000_10000000_11100000... 30)
-	//0xC040E00000000000, // 11000000_01000000_11100000... 31)
-	//0xC060C00000000000, // 11000000_01100000_11000000... 32)
-	//0xE0C0800000000000, // 11100000_11000000_10000000... 33)
-	//0xC0E0400000000000, // 11000000_11100000_01000000... 34)
-	//0x20E0C00000000000, // 00100000_11100000_11000000... 35)
+//var pieces = [...]uint64{ // original Granskas set
+//	0xE0C0800000000000, // 11100000_11000000_10000000...
+//	0xF060000000000000, // 11110000_00110000_00000000...
+//	0xF080800000000000, // 11110000_10000000_10000000...
+//	0x70E0000000000000, // 01110000_11100000_00000000...
+//	0xF0C0000000000000, // 11110000_11000000_00000000...
+//	0x4070C00000000000, // 01000000_01110000_11000000...
 //}
+
+var pieces = [...]uint64{
+	0x80F0800000000000, // 10000000_11110000_10000000... 01) cube unfolding
+	0x80F0400000000000, // 10000000_11110000_01000000... 02) cube unfolding
+	0x80F0200000000000, // 10000000_11110000_00100000... 03) cube unfolding
+	0x80F0100000000000, // 10000000_11110000_00010000... 04) cube unfolding
+	0x40F0200000000000, // 01000000_11110000_00100000... 05) cube unfolding
+	0x40F0400000000000, // 01000000_11110000_01000000... 06) cube unfolding
+	0xC070400000000000, // 11000000_01110000_01000000... 07) cube unfolding
+	0xC070200000000000, // 11000000_01110000_00100000... 08) cube unfolding
+	0x80E0300000000000, // 10000000_11100000_00110000... 09) cube unfolding
+	0xC060300000000000, // 11000000_01100000_00110000... 10) cube unfolding
+	0xE038000000000000, // 11100000_00111000_00000000... 11) cube unfolding
+	0xFC00000000000000, // 11111100_00000000_00000000... 12)
+	0x80F8000000000000, // 10000000_11111000_00000000... 13)
+	0x40F8000000000000, // 01000000_11111000_00000000... 14)
+	0x20F8000000000000, // 00100000_11111000_00000000... 15)
+	0xC078000000000000, // 11000000_01111000_00000000... 16)
+	0xC0F0000000000000, // 11000000_11110000_00000000... 17)
+	0xA0F0000000000000, // 10100000_11110000_00000000... 18)
+	0x90F0000000000000, // 10010000_11110000_00000000... 19)
+	0x60F0000000000000, // 01100000_11110000_00000000... 20)
+	0x8080F00000000000, // 10000000_10000000_11110000... 21)
+	0x4040F00000000000, // 01000000_01000000_11110000... 22)
+	0x40C0700000000000, // 01000000_11000000_01110000... 23)
+	0xD070000000000000, // 11010000_01110000_00000000... 24)
+	0xE070000000000000, // 11100000_01110000_00000000... 25)
+	0xE0E0000000000000, // 11100000_11100000_00000000... 26)
+	0xC0E0800000000000, // 11000000_11100000_10000000... 27)
+	0xC040700000000000, // 11000000_01000000_01110000... 28)
+	0x80C0700000000000, // 10000000_11000000_01110000... 29)
+	0xC080E00000000000, // 11000000_10000000_11100000... 30)
+	0xC040E00000000000, // 11000000_01000000_11100000... 31)
+	0xC060C00000000000, // 11000000_01100000_11000000... 32)
+	0xE0C0800000000000, // 11100000_11000000_10000000... 33)
+	0xC0E0400000000000, // 11000000_11100000_01000000... 34)
+	0x20E0C00000000000, // 00100000_11100000_11000000... 35)
+}
 
 //var pieceSymbols = [...]rune{'-', ':', '+', '=', '*', '@'}
 
@@ -102,8 +107,9 @@ func setEmptyField() {
 }
 
 type solution map[int]uint64 // pieceIndex -> piecePosition
-var solutions = make([][][]solution, len(pieces))
+var solutions [][][]solution
 func makeEmptySolutions() {
+	solutions = make([][][]solution, numberOfPieces)
 	for i := range solutions {
 		solutions[i] = make([][]solution, len(puzzles))
 	}
@@ -229,38 +235,32 @@ func getPiecePositions(u uint64) map[uint64]struct{} {
 	return positions
 }
 
-func makeRange(min, max int) []int {
-	a := make([]int, max - min + 1)
-	for i := range a {
-		a[i] = min + i
+func getSolutionsForCombinationOfPieces(selectedPieces []int) {
+	makeEmptySolutions()
+	for withoutPiece := range selectedPieces {
+		usedPieces := append([]int{}, selectedPieces[:withoutPiece]...)
+		usedPieces = append(usedPieces, selectedPieces[withoutPiece+1:]...)
+		field := emptyField
+		findSolutions(field, withoutPiece, 0, usedPieces, make(solution))
 	}
-	return a
+	checkForPerfectSolution()
+	//printSolutions()
 }
 
-func getSolutionsWithoutPiece(withoutPiece int) {
-	usedPieces := makeRange(0, len(pieces) - 1)
-	usedPieces = append(usedPieces[:withoutPiece], usedPieces[withoutPiece+1:]...)
-
-	field := emptyField
-	findSolutions(field, withoutPiece, len(usedPieces),0, usedPieces, make(solution))
-}
-
-func findSolutions(field uint64, withoutPiece, totalPieces,
-		pieceIndex int, usedPieces []int, usedPositions solution) {
-
+func findSolutions(field uint64, withoutPiece, pieceIndex int, usedPieces []int, usedPositions solution) {
 	piece := usedPieces[pieceIndex]
 	for pos := range piecePositions[piece] {
 		if field & pos == 0 { // can put piece?
 			field |= pos // put piece
 			usedPositions[piece] = pos
-			if pieceIndex == totalPieces - 1 { // was it last piece?
+			if pieceIndex == len(usedPieces) - 1 { // was it last piece?
 				puzzleIndex, found := checkForSolution(field)
 				if found {
 					solutions[withoutPiece][puzzleIndex] =
 						append(solutions[withoutPiece][puzzleIndex], usedPositions)
 				}
 			} else { // it was not the last piece
-				findSolutions(field, withoutPiece, totalPieces, pieceIndex + 1, usedPieces, usedPositions)
+				findSolutions(field, withoutPiece, pieceIndex + 1, usedPieces, usedPositions)
 			}
 			field ^= pos // remove piece and try it's next position
 			delete(usedPositions, piece)
@@ -289,29 +289,116 @@ func checkForSolution(field uint64) (puzzleIndex int, found bool) {
 	return 0, false
 }
 
-//func printField(u uint64) {
+func checkForPerfectSolution(){
+	solvableWithoutPieces := 0
+	for _, wp := range solutions {
+		solvable := true
+		for _, sol := range wp {
+			if len(sol) == 0 {
+				solvable = false
+				break
+			}
+		}
+		if solvable {
+			solvableWithoutPieces++
+		}
+	}
+	switch solvableWithoutPieces {
+	case 0:
+		//fmt.Println("--- 0 solvable ---")
+		if _, err := fmt.Fprintln(w, "--- 0 solvable ---"); err != nil {
+			panic(err)
+		}
+	case 5:
+		//fmt.Println("+++", solvableWithoutPieces, "solvable +++ PERFECT +++")
+		if _, err := fmt.Fprintln(w, "+++", solvableWithoutPieces, "solvable +++ PERFECT +++"); err != nil {
+			panic(err)
+		}
+	default:
+		//fmt.Println("+++", solvableWithoutPieces, "solvable +++")
+		if _, err := fmt.Fprintln(w, "+++", solvableWithoutPieces, "solvable +++"); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func tryPieceCombinations(n, m int, emit func([]int)) {
+	s := make([]int, m)
+	last := m - 1
+	comb := 0
+	var rc func(int, int)
+	rc = func(i, next int) {
+		for j := next; j < n; j++ {
+			s[i] = j
+			if i == last {
+				comb++
+				pieces := ""
+				for i := range s {
+					pieces += fmt.Sprintf("%3d", s[i])
+				}
+				//fmt.Printf("%7d combination [%s] ", comb, pieces)
+				if _, err := fmt.Fprintf(w, "%7d combination [%s] ", comb, pieces); err != nil {
+					panic(err)
+				}
+				emit(s)
+			} else {
+				rc(i + 1, j + 1)
+			}
+		}
+		return
+	}
+	rc(0, 0)
+}
+
+//func printPiece(u uint64) {
 //	for i := uint(0); i < 8; i++ {
 //		mask := uint64(0xFF00000000000000) >> (i * 8)
-//		fmt.Printf("%08b\n", (u & mask) >> ((7 - i) * 8))
+//		line := (u & mask) >> ((7 - i) * 8)
+//		if line != 0x00 {
+//			fmt.Printf("%08b\n", line)
+//		}
 //	}
 //	fmt.Println()
 //}
 
+//func printSolutions() {
+//	for i, wp := range solutions {
+//		if _, err := fmt.Fprintf(w, "-%d: ", i); err != nil {
+//			panic(err)
+//		}
+//		for j, s := range wp {
+//			if _, err := fmt.Fprintf(w, "%2d %s ", len(s), puzzles[j]); err != nil {
+//				panic(err)
+//			}
+//		}
+//		if _, err := fmt.Fprintln(w); err != nil {
+//			panic(err)
+//		}
+//	}
+//}
+
 func main() {
-	// initialize globals
 	setSortedPuzzles()
 	setEmptyField()
 	setPiecePositions()
-	makeEmptySolutions()
 
-	for i := range pieces {
-		getSolutionsWithoutPiece(i)
+	f, err := os.Create("output.txt")
+	if err != nil {
+		panic(err)
 	}
-
-	for i, wp := range solutions {
-		fmt.Println("Without piece", i)
-		for j, s := range wp {
-			fmt.Println("Puzzle", puzzles[j], "has", len(s), "solutions")
+	// close f on exit and check for its returned error
+	defer func() {
+		if err := f.Close(); err != nil {
+			panic(err)
 		}
+	}()
+
+	// make a write buffer
+	w = bufio.NewWriter(f)
+
+	tryPieceCombinations(len(pieces), numberOfPieces, getSolutionsForCombinationOfPieces)
+
+	if err = w.Flush(); err != nil {
+		panic(err)
 	}
 }
