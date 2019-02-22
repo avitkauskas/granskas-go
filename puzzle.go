@@ -274,7 +274,7 @@ func checkForSolution(field uint64) (puzzleIndex int, found bool) {
 	for i := uint(1); i < 64; i++ {
 		if field & (1 << i) != 0 {
 			idx := 63 - i
-			idx = (idx / 8) * 6 + idx % 8
+			idx = (idx / 8) * boardSize + idx % 8
 			uncoveredCells = append(uncoveredCells, board[idx])
 		}
 	}
